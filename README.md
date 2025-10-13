@@ -64,6 +64,8 @@
 
 AXISUS MES é um sistema completo de gestão de produção industrial com monitoramento em tempo real, análise de OEE (Overall Equipment Effectiveness) e controle de máquinas. A aplicação oferece uma plataforma integrada para gerenciamento de operações de produção, análise de desempenho e tomada de decisão baseada em dados.
 
+https://github.com/user-attachments/assets/4c0254ec-f761-4a1f-8f45-27e2f674c4d3
+
 ## ✨ Funcionalidades
 
 - **Dashboard Executivo**: Visão geral do desempenho da produção
