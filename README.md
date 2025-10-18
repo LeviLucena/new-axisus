@@ -10,6 +10,8 @@
 
 AXISUS MES (Manufacturing Execution System) is a comprehensive production management system designed for industrial environments. It provides real-time monitoring, OEE metrics, production order tracking, and machine performance analysis to optimize manufacturing operations.
 
+https://github.com/user-attachments/assets/f8cdcc36-aa06-41aa-97b4-1a2e301d474e
+
 ## 🎯 Purpose
 
 The AXISUS MES system bridges the gap between planning systems (ERP) and shop floor operations, offering:
