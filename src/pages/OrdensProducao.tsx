@@ -11,59 +11,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { apiClient } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
-const orders = [
-  {
-    number: "OP010",
-    product: "Porca M8 - Aço Inox",
-    quantity: "734/339",
-    status: "Em Execução",
-    progress: 217,
-    startDate: "--",
-    endDate: "--",
-  },
-  {
-    number: "OP009",
-    product: "Placa Alumínio 2mm 50x100cm",
-    quantity: "567/443",
-    status: "Em Execução",
-    progress: 128,
-    startDate: "--",
-    endDate: "--",
-  },
-  {
-    number: "OP008",
-    product: "Tubo Aço 25mm - 1 metro",
-    quantity: "296/547",
-    status: "Em Execução",
-    progress: 54,
-    startDate: "--",
-    endDate: "--",
-  },
-  {
-    number: "OP007",
-    product: "Placa Alumínio 2mm 50x100cm",
-    quantity: "800/919",
-    status: "Finalizada",
-    progress: 87,
-    startDate: "--",
-    endDate: "--",
-  },
-  {
-    number: "OP006",
-    product: "Arruela M8 - Aço Inox",
-    quantity: "135/830",
-    status: "Planejada",
-    progress: 16,
-    startDate: "--",
-    endDate: "--",
-  },
-];
+interface Order {
+  id: string;
+  orderNumber: string;
+  product: {
+    name: string;
+  };
+  quantity: number;
+  produced: number;
+  status: string;
+  priority?: number;
+  startDate?: string;
+  endDate?: string;
+  createdById: string;
+}
 
 export default function OrdensProducao() {
+  const { data: orders = [], isLoading, refetch } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => apiClient.getOrders(),
+  });
+
   const totalOPs = orders.length;
-  const executing = orders.filter((o) => o.status === "Em Execução").length;
-  const finished = orders.filter((o) => o.status === "Finalizada").length;
+  const executing = orders.filter((o: Order) => o.status === "IN_PROGRESS").length;
+  const finished = orders.filter((o: Order) => o.status === "FINISHED").length;
 
   return (
     <div className="space-y-6">
@@ -97,7 +71,7 @@ export default function OrdensProducao() {
         </div>
 
         <div className="flex justify-end gap-2 mb-4">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Atualizar
           </Button>
@@ -123,31 +97,38 @@ export default function OrdensProducao() {
             </TableHeader>
             <TableBody>
               {orders.map((order) => (
-                <TableRow key={order.number}>
-                  <TableCell className="font-semibold text-primary">{order.number}</TableCell>
-                  <TableCell>{order.product}</TableCell>
-                  <TableCell className="font-mono">{order.quantity}</TableCell>
+                <TableRow key={order.id}>
+                  <TableCell className="font-semibold text-primary">{order.orderNumber}</TableCell>
+                  <TableCell>{order.product?.name || 'Produto não encontrado'}</TableCell>
+                  <TableCell className="font-mono">{order.produced}/{order.quantity}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        order.status === "Em Execução"
+                        order.status === "IN_PROGRESS"
                           ? "default"
-                          : order.status === "Finalizada"
+                          : order.status === "FINISHED"
                           ? "secondary"
                           : "outline"
                       }
                     >
-                      {order.status}
+                      {order.status === "PLANNED" ? "Planejada" : 
+                       order.status === "IN_PROGRESS" ? "Em Execução" : 
+                       order.status === "FINISHED" ? "Finalizada" : 
+                       order.status}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Progress value={order.progress} className="w-24 h-2" />
-                      <span className="text-sm font-medium">{order.progress}%</span>
+                      <Progress value={(order.produced / order.quantity) * 100} className="w-24 h-2" />
+                      <span className="text-sm font-medium">{Math.round((order.produced / order.quantity) * 100)}%</span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{order.startDate}</TableCell>
-                  <TableCell className="text-muted-foreground">{order.endDate}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {order.startDate ? new Date(order.startDate).toLocaleDateString() : '--'}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {order.endDate ? new Date(order.endDate).toLocaleDateString() : '--'}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button size="sm" variant="outline" className="h-8 w-8 p-0">

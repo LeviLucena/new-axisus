@@ -10,59 +10,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { apiClient } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
-const users = [
-  {
-    id: 1,
-    fullName: "Administrador do Sistema",
-    username: "admin",
-    role: "Administrador",
-    status: "ATIVO",
-    lastLogin: "30/07/2025, 13:13:31",
-  },
-  {
-    id: 2,
-    fullName: "João Silva - Gestor",
-    username: "gestor01",
-    role: "Gestor",
-    status: "ATIVO",
-    lastLogin: "Nunca",
-  },
-  {
-    id: 3,
-    fullName: "Maria Santos - Gestora",
-    username: "gestor02",
-    role: "Gestor",
-    status: "ATIVO",
-    lastLogin: "Nunca",
-  },
-  {
-    id: 4,
-    fullName: "Pedro Costa - Operador",
-    username: "operador01",
-    role: "Operador",
-    status: "ATIVO",
-    lastLogin: "Nunca",
-  },
-  {
-    id: 5,
-    fullName: "Ana Oliveira - Operadora",
-    username: "operador02",
-    role: "Operador",
-    status: "ATIVO",
-    lastLogin: "Nunca",
-  },
-  {
-    id: 6,
-    fullName: "Carlos Lima - Operador",
-    username: "operador03",
-    role: "Operador",
-    status: "ATIVO",
-    lastLogin: "Nunca",
-  },
-];
+interface User {
+  id: string;
+  firstName: string;
+  lastName: string;
+  username: string;
+  role: string;
+  status: string;
+  lastLogin?: string;
+  group?: {
+    name: string;
+  };
+}
 
 export default function GestaoUsuarios() {
+  const { data: users = [], isLoading, refetch } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => apiClient.getUsers(),
+  });
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -94,13 +62,19 @@ export default function GestaoUsuarios() {
             <TableBody>
               {users.map((user) => (
                 <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.fullName}</TableCell>
+                  <TableCell className="font-medium">{user.firstName} {user.lastName}</TableCell>
                   <TableCell className="font-mono">{user.username}</TableCell>
-                  <TableCell>{user.role}</TableCell>
+                  <TableCell>
+                    {user.role === 'ADMIN' ? 'Administrador' : 
+                     user.role === 'MANAGER' ? 'Gestor' : 
+                     user.role === 'OPERATOR' ? 'Operador' : user.role}
+                  </TableCell>
                   <TableCell>
                     <Badge className="bg-success text-success-foreground">{user.status}</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{user.lastLogin}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
+                  </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
                       <Button size="sm" variant="outline" className="h-8 w-8 p-0 text-info">

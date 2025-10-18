@@ -1,0 +1,139 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  OPERATOR
+}
+
+enum OrderStatus {
+  PLANNED
+  IN_PROGRESS
+  FINISHED
+  CANCELLED
+}
+
+enum MachineStatus {
+  RUNNING
+  STOPPED
+  MAINTENANCE
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id          String    @id @default(cuid())
+  firstName   String
+  lastName    String
+  username    String    @unique
+  email       String    @unique
+  password    String    // hashed password
+  role        UserRole
+  status      String    @default("ATIVO")
+  lastLogin   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  groupId     String?
+  group       Group?    @relation(fields: [groupId], references: [id])
+  // Orders created by this user
+  createdOrders Order[]
+  // Production logs created by this user
+  productionLogs ProductionLog[]
+}
+
+model Group {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  users       User[]
+  machines    Machine[]
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  code        String         @unique
+  name        String
+  description String?
+  status      ProductStatus  @default(ACTIVE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  orders      Order[]
+  // Production logs for this product
+  productionLogs ProductionLog[]
+}
+
+model Order {
+  id            String       @id @default(cuid())
+  orderNumber   String       @unique  // e.g., "OP010"
+  productId     String
+  product       Product      @relation(fields: [productId], references: [id])
+  quantity      Int          // planned quantity
+  produced      Int          @default(0)  // quantity produced
+  status        OrderStatus  @default(PLANNED)
+  priority      Int?         @default(1)
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  createdById   String
+  createdBy     User         @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  // Production logs for this order
+  productionLogs ProductionLog[]
+}
+
+model Machine {
+  id              String         @id @default(cuid())
+  name            String
+  type            String         // e.g., "Production", "Logistics", "Packaging"
+  status          MachineStatus  @default(STOPPED)
+  groupId         String?
+  group           Group?         @relation(fields: [groupId], references: [id])
+  oee             Float          @default(0.0)  // Overall Equipment Effectiveness
+  availability    Float          @default(0.0)
+  performance     Float          @default(0.0)
+  quality         Float          @default(0.0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  // Production logs from this machine
+  productionLogs  ProductionLog[]
+}
+
+model ProductionLog {
+  id          String    @id @default(cuid())
+  quantity    Int       // quantity produced
+  timestamp   DateTime  @default(now())
+  machineId   String
+  machine     Machine   @relation(fields: [machineId], references: [id])
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id])
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Parameter {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  value       String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

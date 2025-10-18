@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import { apiClient } from "@/lib/api";
 
 const testCredentials = [
   {
@@ -41,13 +42,46 @@ export default function Login() {
   const [profile, setProfile] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple validation for demo
-    if (username && password && profile) {
-      navigate("/dashboard");
+    setLoading(true);
+    setError("");
+    
+    try {
+      // Map profile to backend format
+      let profileValue = "";
+      switch(profile) {
+        case "administrador":
+          profileValue = "ADMIN";
+          break;
+        case "gestor":
+          profileValue = "MANAGER";
+          break;
+        case "operador":
+          profileValue = "OPERATOR";
+          break;
+        default:
+          setError("Por favor, selecione um perfil válido");
+          setLoading(false);
+          return;
+      }
+      
+      const result = await apiClient.login(username, password, profile);
+      
+      if (result && result.token) {
+        navigate("/dashboard");
+      } else {
+        setError("Credenciais inválidas");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("Erro ao fazer login. Por favor, tente novamente.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,6 +110,12 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
+            {error && (
+              <div className="p-3 bg-destructive/10 text-destructive rounded-md">
+                {error}
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="profile">Selecione seu perfil</Label>
               <Select value={profile} onValueChange={setProfile}>
@@ -114,8 +154,8 @@ export default function Login() {
               />
             </div>
 
-            <Button type="submit" className="w-full" size="lg">
-              Entrar no Sistema
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? "Entrando..." : "Entrar no Sistema"}
             </Button>
           </form>
 

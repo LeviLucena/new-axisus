@@ -1,13 +1,89 @@
-version: '3.8'
-
 services:
-  app:
+  # PostgreSQL database
+  db:
+    image: postgres:15-alpine
+    container_name: axisus_mes_db
+    environment:
+      POSTGRES_DB: axisus_mes
+      POSTGRES_USER: axisus_user
+      POSTGRES_PASSWORD: axisus_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U axisus_user -d axisus_mes"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - axisus_network
+    restart: unless-stopped
+
+  # Database setup
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: base
+    container_name: axisus_mes_migrate
+    command: >
+      sh -c "
+        npx prisma db push --accept-data-loss --schema /app/prisma/schema.prisma &&
+        npx prisma generate --schema /app/prisma/schema.prisma &&
+        node prisma/seed.js
+      "
+    environment:
+      DATABASE_URL: postgresql://axisus_user:axisus_password@db:5432/axisus_mes?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - axisus_network
+    restart: "no"
+
+  # Backend API server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: axisus_mes_backend
+    environment:
+      DATABASE_URL: postgresql://axisus_user:axisus_password@db:5432/axisus_mes?schema=public
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      NODE_ENV: production
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    depends_on:
+      - db
+      - migrate
+    networks:
+      - axisus_network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        npx prisma generate --schema /app/prisma/schema.prisma &&
+        node dist/app.js
+      "
+
+  # Frontend application
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: axisus_mes_frontend
     ports:
-      - "80:80"  # Expose port 80 for the web app
-    container_name: artful-route-mapper
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - axisus_network
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
+
+volumes:
+  postgres_data:
+
+networks:
+  axisus_network:
+    driver: bridge

@@ -11,17 +11,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { apiClient } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
-const products = [
-  { id: 1, code: "PROD001", name: "Parafuso M8x20 - Aço Inox", description: "", status: "ATIVO" },
-  { id: 2, code: "PROD002", name: "Porca M8 - Aço Inox", description: "", status: "ATIVO" },
-  { id: 3, code: "PROD003", name: "Arruela M8 - Aço Inox", description: "", status: "ATIVO" },
-  { id: 4, code: "PROD004", name: "Suporte Metálico 30x40cm", description: "", status: "ATIVO" },
-  { id: 5, code: "PROD005", name: "Placa Alumínio 2mm 50x100cm", description: "", status: "ATIVO" },
-  { id: 6, code: "PROD006", name: "Tubo Aço 25mm - 1 metro", description: "", status: "ATIVO" },
-];
+interface Product {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  status: string;
+}
 
 export default function Produtos() {
+  const { data: products = [], isLoading, refetch } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => apiClient.getProducts(),
+  });
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -61,7 +66,7 @@ export default function Produtos() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Buscar produtos..." className="pl-10" />
           </div>
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Atualizar
           </Button>
@@ -82,12 +87,14 @@ export default function Produtos() {
             <TableBody>
               {products.map((product) => (
                 <TableRow key={product.id}>
-                  <TableCell className="font-medium">{product.id}</TableCell>
+                  <TableCell className="font-mono">{product.id.substring(0, 8)}</TableCell>
                   <TableCell className="font-mono font-semibold">{product.code}</TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell className="text-muted-foreground">{product.description || "--"}</TableCell>
                   <TableCell>
-                    <Badge className="bg-success text-success-foreground">{product.status}</Badge>
+                    <Badge className={product.status === "ACTIVE" ? "bg-success text-success-foreground" : "bg-destructive text-destructive-foreground"}>
+                      {product.status === "ACTIVE" ? "ATIVO" : "INATIVO"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

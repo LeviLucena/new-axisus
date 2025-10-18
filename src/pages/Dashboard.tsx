@@ -11,55 +11,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { apiClient } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
-const machines = [
-  {
-    id: 1,
-    name: "Prensa Hidráulica 01",
-    type: "Produção",
-    status: "running",
-    oee: 83.5,
-    availability: 100.0,
-    performance: 87.0,
-    quality: 96.0,
-  },
-  {
-    id: 2,
-    name: "Esteira Transportadora 02",
-    type: "Logística",
-    status: "stopped",
-    oee: 40.8,
-    availability: 58.3,
-    performance: 70.0,
-    quality: 100.0,
-  },
-  {
-    id: 3,
-    name: "Injetora Plástico 03",
-    type: "Produção",
-    status: "stopped",
-    oee: 14.7,
-    availability: 20.0,
-    performance: 75.0,
-    quality: 98.0,
-  },
-  {
-    id: 4,
-    name: "Empacotadora 04",
-    type: "Embalagem",
-    status: "running",
-    oee: 89.3,
-    availability: 100.0,
-    performance: 93.0,
-    quality: 96.0,
-  },
-];
+interface Machine {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  oee: number;
+  availability: number;
+  performance: number;
+  quality: number;
+}
 
 export default function Dashboard() {
-  const totalMachines = machines.length;
-  const runningMachines = machines.filter((m) => m.status === "running").length;
-  const stoppedMachines = machines.filter((m) => m.status === "stopped").length;
-  const avgOEE = (machines.reduce((acc, m) => acc + m.oee, 0) / totalMachines).toFixed(1);
+  const { data: analyticsData, isLoading, refetch } = useQuery({
+    queryKey: ['oeeMetrics'],
+    queryFn: () => apiClient.getOeeMetrics(),
+  });
+
+  const machines = analyticsData?.machines || [];
+  const totalMachines = analyticsData?.totalMachines || 0;
+  const runningMachines = analyticsData?.runningMachines || 0;
+  const stoppedMachines = analyticsData?.stoppedMachines || 0;
+  const avgOEE = analyticsData?.avgOEE?.toFixed(1) || '0';
+
+  // Convert status to frontend format
+  const getStatusDisplay = (status: string) => {
+    switch (status) {
+      case 'RUNNING': return 'running';
+      case 'STOPPED': return 'stopped';
+      case 'MAINTENANCE': return 'stopped';
+      default: return 'stopped';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -77,7 +64,7 @@ export default function Dashboard() {
             <div className="text-right text-sm opacity-90">
               <p>Última atualização: --</p>
             </div>
-            <Button variant="secondary" size="sm">
+            <Button variant="secondary" size="sm" onClick={() => refetch()}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Atualizar
             </Button>
@@ -157,12 +144,12 @@ export default function Dashboard() {
                 </div>
                 <Badge
                   className={
-                    machine.status === "running"
+                    getStatusDisplay(machine.status) === "running"
                       ? "bg-status-running text-success-foreground"
                       : "bg-status-stopped text-destructive-foreground"
                   }
                 >
-                  {machine.status === "running" ? "LIGADA" : "PARADA"}
+                  {getStatusDisplay(machine.status) === "running" ? "LIGADA" : "PARADA"}
                 </Badge>
               </div>
 
