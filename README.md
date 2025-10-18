@@ -23,68 +23,7 @@ The AXISUS MES system bridges the gap between planning systems (ERP) and shop fl
 
 ## 🏗️ Architecture
 
-<<<<<<< HEAD
 The system follows a modern microservices architecture with clear separation of concerns:
-=======
-https://github.com/user-attachments/assets/4c0254ec-f761-4a1f-8f45-27e2f674c4d3
-
-## ✨ Funcionalidades
-
-- **Dashboard Executivo**: Visão geral do desempenho da produção
-- **Dashboard Tático**: Análise detalhada de indicadores
-- **Ordens de Produção**: Gestão de ordens de produção
-- **Registro de Produção**: Controle de produção em tempo real
-- **Análise de Qualidade**: Monitoramento e análise de qualidade
-- **Análise de Disponibilidade**: Avaliação da disponibilidade de equipamentos
-- **Análise de Performance**: Análise do desempenho produtivo
-- **Análise de Paradas**: Identificação e análise de paradas de equipamentos
-- **Análise de Fluxo**: Monitoramento do fluxo de produção
-- **Gestão de Usuários**: Controle de acesso e permissões
-- **Gestão de Grupos**: Organização de usuários em grupos
-- **Gestão de Produtos**: Catalogação e controle de produtos
-- **Parâmetros**: Configurações do sistema
-- **Interface Operacional**: Tela específica para operadores de máquina
-
-## 🛠️ Tecnologias Utilizadas
-
-### Linguagens
-- **TypeScript**: Superset tipado do JavaScript
-- **JavaScript**: Linguagem de programação
-
-### Framework e Bibliotecas
-- **React 18.3.1**: Biblioteca JavaScript para construção de interfaces
-- **React Router DOM**: Roteamento e navegação entre páginas
-- **Vite 5.4.19**: Ferramenta de build rápida
-- **Tailwind CSS**: Framework CSS utilitário
-- **Radix UI**: Componentes primitivos sem estilos
-- **shadcn/ui**: Biblioteca de componentes acessíveis e customizáveis
-
-### Gerenciamento de Estado e Dados
-- **React Query (TanStack Query)**: Gerenciamento de cache e sincronização de dados
-- **React Hook Form**: Gerenciamento de formulários
-- **Zod**: Validação de esquemas
-
-### Componentes e UI
-- **Radix UI Primitives**: Componentes acessíveis e não estilizados
-- **Lucide React**: Ícones SVG
-- **Recharts**: Biblioteca de visualização de dados
-- **Date-fns**: Manipulação de datas
-- **Sonner**: Notificações toast
-- **Cmdk**: Componente de comando (command palette)
-
-### Utilitários
-- **Class Variance Authority**: Utilitário para variantes de classes
-- **CLSX**: Utilitário para condicional de classes CSS
-- **Tailwind Merge**: Mesclagem segura de classes Tailwind
-- **Input OTP**: Componente de verificação de código de uso único
-
-### Estilização
-- **Tailwind CSS 3.4.17**: Framework de estilização utilitário
-- **Tailwind CSS Animate**: Animações prontas para Tailwind
-- **Tailwind CSS Typography**: Plugin para estilização de conteúdo
-
-## 🏗️ Estrutura do Projeto
->>>>>>> a4faff39a8932964c24e57aa1d1a5b606506ccac
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -310,25 +249,4 @@ This project is proprietary and confidential. All rights reserved.
 
 ## 🆘 Support
 
-<<<<<<< HEAD
-For support, please contact the development team or open an issue in the repository.
-=======
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 👨‍💻 Autor
-
-AXISUS MES - Sistema de Gestão de Produção
-
-## 🐳 Docker
-
-O projeto inclui suporte para Docker e Docker Compose para facilitar a implantação em ambientes de produção. O Dockerfile utiliza uma abordagem de build em múltiplas etapas para otimizar o tamanho da imagem final.
-
-## 🔒 Segurança
-
-O projeto implementa práticas recomendadas de segurança, incluindo:
-
-- Tipagem estática com TypeScript
-- Validação de formulários com Zod
-- Componentes acessíveis com Radix UI
-- Gerenciamento seguro de estado com React Query
->>>>>>> a4faff39a8932964c24e57aa1d1a5b606506ccac
+For support, please contact the development team or open an issue in the repository. 
