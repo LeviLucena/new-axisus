@@ -106,67 +106,6 @@ artful-route-mapper/
 4. **Prisma ORM** manages database interactions
 5. **Docker Compose** orchestrates all services together
 
-The system uses JWT tokens for authentication, with role-based access control (ADMIN, MANAGER, OPERATOR) to ensure proper permissions across different user types.
-
-## 🛠️ API Routes
-
-### Authentication
-- `POST /api/auth/login` - User authentication
-- `GET /api/auth/profile` - Get authenticated user profile
-
-### Users
-- `GET /api/users` - List all users
-- `GET /api/users/:id` - Get specific user
-- `POST /api/users` - Create new user
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
-
-### Machines
-- `GET /api/machines` - List all machines
-- `GET /api/machines/:id` - Get specific machine
-- `POST /api/machines` - Create new machine
-- `PUT /api/machines/:id` - Update machine
-- `PUT /api/machines/:id/status` - Update machine status
-- `DELETE /api/machines/:id` - Delete machine
-
-### Products
-- `GET /api/products` - List all products
-- `GET /api/products/:id` - Get specific product
-- `POST /api/products` - Create new product
-- `PUT /api/products/:id` - Update product
-- `DELETE /api/products/:id` - Delete product
-
-### Production Orders
-- `GET /api/orders` - List all production orders
-- `GET /api/orders/:id` - Get specific order
-- `POST /api/orders` - Create new order
-- `PUT /api/orders/:id` - Update order
-- `PUT /api/orders/:id/start` - Start order execution
-- `PUT /api/orders/:id/finish` - Finish order execution
-- `PUT /api/orders/:id/cancel` - Cancel order
-- `DELETE /api/orders/:id` - Delete order
-
-### Production Logs
-- `GET /api/production` - List production logs
-- `GET /api/production/:id` - Get specific log
-- `POST /api/production` - Create new log
-- `PUT /api/production/:id` - Update log
-- `DELETE /api/production/:id` - Delete log
-
-### Analytics
-- `GET /api/analytics/oee` - Overall Equipment Effectiveness metrics
-- `GET /api/analytics/quality` - Quality metrics
-- `GET /api/analytics/availability` - Availability metrics
-- `GET /api/analytics/performance` - Performance metrics
-- `GET /api/analytics/stops` - Stop analysis
-- `GET /api/analytics/flow` - Production flow analysis
-- `GET /api/analytics/tactical` - Tactical dashboard metrics
-
-### Parameters
-- `GET /api/parameters` - Get all system parameters
-- `PUT /api/parameters` - Update system parameters
-- `POST /api/parameters/reset` - Reset parameters to default values
-
 ## 🔧 Default Credentials
 
 After database seeding, the system creates three default users:
