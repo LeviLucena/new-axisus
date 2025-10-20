@@ -27,6 +27,9 @@ export default function Produtos() {
     queryKey: ['products'],
     queryFn: () => apiClient.getProducts(),
   });
+
+  const activeProducts = products.filter(product => product.status === 'ACTIVE');
+
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -57,7 +60,7 @@ export default function Produtos() {
               <Badge className="bg-success text-success-foreground">ATIVO</Badge>
               <p className="text-sm text-muted-foreground">Produtos Ativos</p>
             </div>
-            <p className="text-3xl font-bold">{products.length}</p>
+            <p className="text-3xl font-bold">{activeProducts.length}</p>
           </Card>
         </div>
 

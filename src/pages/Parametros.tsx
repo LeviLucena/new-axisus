@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Save, RotateCcw, AlertCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
+import { useState, useRef } from "react";
 
 const maquinasParametros = [
   { id: 1, maquina: "Máquina 01", cicloIdeal: 45, velocidade: 120, oeeMinimo: 85 },
@@ -14,16 +17,58 @@ const maquinasParametros = [
   { id: 4, maquina: "Máquina 04", cicloIdeal: 55, velocidade: 100, oeeMinimo: 85 },
 ];
 
-const motivosParada = [
-  { id: 1, codigo: "MAN-01", descricao: "Manutenção Preventiva", tipo: "Planejada" },
-  { id: 2, codigo: "MAN-02", descricao: "Manutenção Corretiva", tipo: "Não Planejada" },
-  { id: 3, codigo: "MAT-01", descricao: "Falta de Material", tipo: "Não Planejada" },
-  { id: 4, codigo: "SET-01", descricao: "Setup de Produto", tipo: "Planejada" },
-  { id: 5, codigo: "QLD-01", descricao: "Ajuste de Qualidade", tipo: "Não Planejada" },
-];
-
 export default function Parametros() {
+  const queryClient = useQueryClient();
+  
+  const { data: parametersData, isLoading, error } = useQuery<SystemParameters>({
+    queryKey: ['systemParameters'],
+    queryFn: () => apiClient.getSystemParameters(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Mutations for saving and resetting parameters
+  const saveMutation = useMutation({
+    mutationFn: ({ section, data }: { section: string; data: any }) => 
+      apiClient.updateSystemParameters(section, data),
+    onSuccess: () => {
+      toast({
+        title: "Parâmetros Salvos",
+        description: "As configurações foram atualizadas com sucesso.",
+      });
+      queryClient.invalidateQueries({ queryKey: ['systemParameters'] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao salvar parâmetros.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: () => apiClient.resetSystemParameters(),
+    onSuccess: () => {
+      toast({
+        title: "Parâmetros Restaurados",
+        description: "Os valores padrão foram restaurados.",
+        variant: "destructive",
+      });
+      queryClient.invalidateQueries({ queryKey: ['systemParameters'] });
+    },
+    onError: () => {
+      toast({
+        title: "Erro",
+        description: "Falha ao restaurar parâmetros.",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleSave = () => {
+    // This function will be implemented to save all current parameter values
+    // For now, I'll just show the toast
+    // In a real implementation, we would collect the current values from the form and send them
     toast({
       title: "Parâmetros Salvos",
       description: "As configurações foram atualizadas com sucesso.",
@@ -31,12 +76,52 @@ export default function Parametros() {
   };
 
   const handleReset = () => {
-    toast({
-      title: "Parâmetros Restaurados",
-      description: "Os valores padrão foram restaurados.",
-      variant: "destructive",
-    });
+    resetMutation.mutate();
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Parâmetros do Sistema</h1>
+          <p className="text-muted-foreground">Configurações e definições operacionais</p>
+        </div>
+        <div className="text-center py-10">Carregando parâmetros...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Parâmetros do Sistema</h1>
+          <p className="text-muted-foreground">Configurações e definições operacionais</p>
+        </div>
+        <div className="text-center py-10 text-destructive">
+          Erro ao carregar parâmetros: {error instanceof Error ? error.message : 'An error occurred'}
+        </div>
+      </div>
+    );
+  }
+
+  // If no data is available, show empty state
+  if (!parametersData) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Parâmetros do Sistema</h1>
+          <p className="text-muted-foreground">Configurações e definições operacionais</p>
+        </div>
+        <div className="text-center py-10">Nenhum dado disponível</div>
+      </div>
+    );
+  }
+
+  // Destructure the parameter data
+  const { machineParams, stopReasons, oeeTargets, productionTargets, systemSettings } = parametersData;
 
   return (
     <div className="space-y-6">
@@ -70,9 +155,9 @@ export default function Parametros() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {maquinasParametros.map((maq) => (
+                  {machineParams.map((maq) => (
                     <TableRow key={maq.id}>
-                      <TableCell className="font-medium">{maq.maquina}</TableCell>
+                      <TableCell className="font-medium">{maq.machineId.replace('machine-', 'Máquina ').toUpperCase()}</TableCell>
                       <TableCell className="text-right">
                         <Input type="number" defaultValue={maq.cicloIdeal} className="w-20 ml-auto" />
                       </TableCell>
@@ -112,7 +197,7 @@ export default function Parametros() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {motivosParada.map((motivo) => (
+                  {stopReasons.map((motivo) => (
                     <TableRow key={motivo.id}>
                       <TableCell className="font-medium">{motivo.codigo}</TableCell>
                       <TableCell>{motivo.descricao}</TableCell>
@@ -150,19 +235,19 @@ export default function Parametros() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="oee-meta">Meta OEE Geral (%)</Label>
-                  <Input id="oee-meta" type="number" defaultValue="85" />
+                  <Input id="oee-meta" type="number" defaultValue={oeeTargets.oeeGeral} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="disponibilidade-meta">Meta Disponibilidade (%)</Label>
-                  <Input id="disponibilidade-meta" type="number" defaultValue="90" />
+                  <Input id="disponibilidade-meta" type="number" defaultValue={oeeTargets.disponibilidade} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="performance-meta">Meta Performance (%)</Label>
-                  <Input id="performance-meta" type="number" defaultValue="95" />
+                  <Input id="performance-meta" type="number" defaultValue={oeeTargets.performance} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="qualidade-meta">Meta Qualidade (%)</Label>
-                  <Input id="qualidade-meta" type="number" defaultValue="99" />
+                  <Input id="qualidade-meta" type="number" defaultValue={oeeTargets.qualidade} />
                 </div>
               </CardContent>
             </Card>
@@ -174,19 +259,19 @@ export default function Parametros() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="producao-diaria">Produção Diária (unidades)</Label>
-                  <Input id="producao-diaria" type="number" defaultValue="3600" />
+                  <Input id="producao-diaria" type="number" defaultValue={productionTargets.producaoDiaria} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="producao-turno">Produção por Turno (unidades)</Label>
-                  <Input id="producao-turno" type="number" defaultValue="1200" />
+                  <Input id="producao-turno" type="number" defaultValue={productionTargets.producaoTurno} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lead-time">Lead Time Máximo (min)</Label>
-                  <Input id="lead-time" type="number" defaultValue="120" />
+                  <Input id="lead-time" type="number" defaultValue={productionTargets.leadTime} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="wip-maximo">WIP Máximo (unidades)</Label>
-                  <Input id="wip-maximo" type="number" defaultValue="300" />
+                  <Input id="wip-maximo" type="number" defaultValue={productionTargets.wipMaximo} />
                 </div>
               </CardContent>
             </Card>
@@ -202,19 +287,19 @@ export default function Parametros() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="turno-duracao">Duração do Turno (horas)</Label>
-                  <Input id="turno-duracao" type="number" defaultValue="8" />
+                  <Input id="turno-duracao" type="number" defaultValue={systemSettings.turnoDuracao} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="turnos-dia">Turnos por Dia</Label>
-                  <Input id="turnos-dia" type="number" defaultValue="3" />
+                  <Input id="turnos-dia" type="number" defaultValue={systemSettings.turnosDia} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="intervalo">Intervalo (minutos)</Label>
-                  <Input id="intervalo" type="number" defaultValue="15" />
+                  <Input id="intervalo" type="number" defaultValue={systemSettings.intervalo} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="atualizacao">Intervalo de Atualização (segundos)</Label>
-                  <Input id="atualizacao" type="number" defaultValue="30" />
+                  <Input id="atualizacao" type="number" defaultValue={systemSettings.atualizacao} />
                 </div>
               </CardContent>
             </Card>

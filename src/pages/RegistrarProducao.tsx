@@ -7,8 +7,52 @@ import { Textarea } from "@/components/ui/textarea";
 import { Save, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
+
+interface Machine {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+}
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  productId: string;
+  quantity: number;
+  status: string;
+  productName?: string; // Will be populated when we fetch related product info
+}
+
+interface Product {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+}
 
 export default function RegistrarProducao() {
+  // Fetch machines, orders, and products from backend
+  const { data: machines = [], isLoading: machinesLoading, error: machinesError } = useQuery<Machine[]>({
+    queryKey: ['machines'],
+    queryFn: () => apiClient.getMachines(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useQuery<Order[]>({
+    queryKey: ['orders'],
+    queryFn: () => apiClient.getOrders(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery<Product[]>({
+    queryKey: ['products'],
+    queryFn: () => apiClient.getProducts(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   const [formData, setFormData] = useState({
     maquina: "",
     ordem: "",
@@ -20,23 +64,96 @@ export default function RegistrarProducao() {
     observacoes: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Produção Registrada",
-      description: "Os dados de produção foram salvos com sucesso.",
-    });
-    setFormData({
-      maquina: "",
-      ordem: "",
-      produto: "",
-      quantidade: "",
-      conformes: "",
-      naoConformes: "",
-      refugos: "",
-      observacoes: "",
-    });
+    
+    // Validate required fields
+    if (!formData.maquina || !formData.ordem || !formData.produto || !formData.quantidade) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      // Get current user ID from the profile API
+      const profileResponse = await apiClient.request('/auth/profile');
+      const userId = profileResponse?.user?.id;
+
+      if (!userId) {
+        throw new Error('Could not retrieve user ID');
+      }
+
+      // Prepare the production log data
+      const productionData = {
+        quantity: parseInt(formData.quantidade) || 0,
+        machineId: formData.maquina,
+        orderId: formData.ordem,
+        productId: formData.produto,
+        userId: userId,
+      };
+
+      // Send the data to the backend
+      await apiClient.request('/production', {
+        method: 'POST',
+        body: JSON.stringify(productionData),
+      });
+
+      toast({
+        title: "Produção Registrada",
+        description: "Os dados de produção foram salvos com sucesso.",
+      });
+      
+      // Reset form
+      setFormData({
+        maquina: "",
+        ordem: "",
+        produto: "",
+        quantidade: "",
+        conformes: "",
+        naoConformes: "",
+        refugos: "",
+        observacoes: "",
+      });
+    } catch (error) {
+      console.error('Error submitting production data:', error);
+      toast({
+        title: "Erro",
+        description: "Falha ao registrar produção. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
+
+  // Show loading state if any of the data is loading
+  if (machinesLoading || ordersLoading || productsLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Registrar Produção</h1>
+          <p className="text-muted-foreground">Lançamento de dados de produção e qualidade</p>
+        </div>
+        <div className="text-center py-10">Carregando dados...</div>
+      </div>
+    );
+  }
+
+  // Show error state if there are errors
+  if (machinesError || ordersError || productsError) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Registrar Produção</h1>
+          <p className="text-muted-foreground">Lançamento de dados de produção e qualidade</p>
+        </div>
+        <div className="text-center py-10 text-destructive">
+          Erro ao carregar dados: {machinesError?.toString() || ordersError?.toString() || productsError?.toString()}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -63,10 +180,11 @@ export default function RegistrarProducao() {
                       <SelectValue placeholder="Selecione a máquina" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="maq01">Máquina 01</SelectItem>
-                      <SelectItem value="maq02">Máquina 02</SelectItem>
-                      <SelectItem value="maq03">Máquina 03</SelectItem>
-                      <SelectItem value="maq04">Máquina 04</SelectItem>
+                      {machines.map((machine) => (
+                        <SelectItem key={machine.id} value={machine.id}>
+                          {machine.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -81,10 +199,11 @@ export default function RegistrarProducao() {
                       <SelectValue placeholder="Selecione a OP" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="op001">OP-2025-001</SelectItem>
-                      <SelectItem value="op002">OP-2025-002</SelectItem>
-                      <SelectItem value="op003">OP-2025-003</SelectItem>
-                      <SelectItem value="op004">OP-2025-004</SelectItem>
+                      {orders.map((order) => (
+                        <SelectItem key={order.id} value={order.id}>
+                          {order.orderNumber}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -99,9 +218,11 @@ export default function RegistrarProducao() {
                       <SelectValue placeholder="Selecione o produto" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="prod-a">Produto A</SelectItem>
-                      <SelectItem value="prod-b">Produto B</SelectItem>
-                      <SelectItem value="prod-c">Produto C</SelectItem>
+                      {products.map((product) => (
+                        <SelectItem key={product.id} value={product.id}>
+                          {product.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>

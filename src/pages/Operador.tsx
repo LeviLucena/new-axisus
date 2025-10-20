@@ -3,17 +3,48 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
 
-const availableMachines = [
-  { id: 1, name: "Prensa Hidráulica 01", type: "Produção", cycleTime: "10s" },
-  { id: 2, name: "Esteira Transportadora 02", type: "Logística", cycleTime: "12s" },
-  { id: 3, name: "Injetora Plástico 03", type: "Produção", cycleTime: "15.2s" },
-  { id: 4, name: "Empacotadora 04", type: "Embalagem", cycleTime: "6.8s" },
-  { id: 5, name: "Serra Circular 05", type: "Corte", cycleTime: "10.5s" },
-  { id: 6, name: "Furadeira CNC 06", type: "Usinagem", cycleTime: "18.3s" },
-];
+interface Machine {
+  id: string; // The backend typically returns string IDs
+  name: string;
+  type: string;
+  status: string; // RUNNING, STOPPED, MAINTENANCE
+  cycleTime?: number; // Cycle time in seconds
+}
 
 export default function Operador() {
+  const { data: machines = [], isLoading, error, refetch } = useQuery<Machine[]>({
+    queryKey: ['machines'],
+    queryFn: () => apiClient.getMachines(),
+    staleTime: 1 * 60 * 1000, // 1 minute
+    retry: 1,
+  });
+
+  // Show all machines regardless of status
+  const availableMachines = machines;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="text-center py-10">Carregando máquinas...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto p-6">
+        <div className="text-center py-10 text-destructive">
+          Erro ao carregar máquinas: {error instanceof Error ? error.message : 'An error occurred'}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Header */}
@@ -69,8 +100,17 @@ export default function Operador() {
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-1">
                     <h3 className="font-bold">{machine.name}</h3>
-                    <Badge className="bg-status-operational text-success-foreground">
-                      OPERACIONAL
+                    <Badge 
+                      className={
+                        machine.status === 'RUNNING' 
+                          ? 'bg-status-running text-success-foreground' 
+                          : machine.status === 'MAINTENANCE'
+                            ? 'bg-status-maintenance text-warning-foreground'
+                            : 'bg-status-stopped text-destructive-foreground'
+                      }
+                    >
+                      {machine.status === 'RUNNING' ? 'OPERACIONAL' : 
+                       machine.status === 'MAINTENANCE' ? 'MANUTENÇÃO' : 'PARADA'}
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{machine.type}</p>
@@ -86,12 +126,20 @@ export default function Operador() {
                   <span className="text-sm text-muted-foreground">Tempo de Ciclo:</span>
                   <span className="font-semibold flex items-center gap-1">
                     <Clock className="w-4 h-4" />
-                    {machine.cycleTime}
+                    {machine.cycleTime ? `${machine.cycleTime}s` : 'N/A'}
                   </span>
                 </div>
               </div>
 
-              <Button className="w-full">Selecionar Máquina</Button>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  // TODO: Implement machine selection logic
+                  console.log(`Machine selected: ${machine.id} - ${machine.name}`);
+                }}
+              >
+                Selecionar Máquina
+              </Button>
             </Card>
           ))}
         </div>

@@ -3,31 +3,106 @@ import { MetricCard } from "@/components/MetricCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertTriangle, Clock, Wrench, PackageX } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
 
-const motivosParada = [
-  { motivo: "Manutenção", quantidade: 12, duracao: 180, percentual: 35, color: "#ef4444" },
-  { motivo: "Falta de Material", quantidade: 8, duracao: 95, percentual: 18, color: "#f97316" },
-  { motivo: "Setup", quantidade: 15, duracao: 120, percentual: 23, color: "#eab308" },
-  { motivo: "Ajuste de Qualidade", quantidade: 6, duracao: 65, percentual: 13, color: "#3b82f6" },
-  { motivo: "Outros", quantidade: 5, duracao: 55, percentual: 11, color: "#8b5cf6" },
-];
+// Define interfaces for stop analysis data
+interface StopReason {
+  motivo: string;
+  quantidade: number;
+  duracao: number;
+  percentual: number;
+  color: string;
+}
 
-const paradasPorMaquina = [
-  { maquina: "Máquina 01", paradas: 8, duracao: 95 },
-  { maquina: "Máquina 02", paradas: 14, duracao: 165 },
-  { maquina: "Máquina 03", paradas: 10, duracao: 120 },
-  { maquina: "Máquina 04", paradas: 14, duracao: 135 },
-];
+interface StopsByMachine {
+  maquina: string;
+  paradas: number;
+  duracao: number;
+}
 
-const historicoParadas = [
-  { data: "10/10/2025", hora: "08:30", maquina: "Máquina 02", motivo: "Manutenção Preventiva", duracao: "45 min", responsavel: "João Silva" },
-  { data: "10/10/2025", hora: "10:15", maquina: "Máquina 04", motivo: "Falta de Material", duracao: "30 min", responsavel: "Maria Santos" },
-  { data: "10/10/2025", hora: "13:00", maquina: "Máquina 01", motivo: "Setup de Produto", duracao: "25 min", responsavel: "Pedro Costa" },
-  { data: "10/10/2025", hora: "14:45", maquina: "Máquina 03", motivo: "Ajuste de Parâmetros", duracao: "20 min", responsavel: "Ana Lima" },
-  { data: "10/10/2025", hora: "16:20", maquina: "Máquina 02", motivo: "Manutenção Corretiva", duracao: "60 min", responsavel: "João Silva" },
-];
+interface StopHistory {
+  data: string;
+  hora: string;
+  maquina: string;
+  motivo: string;
+  duracao: string;
+  responsavel: string;
+}
+
+interface StopAnalytics {
+  totalStops: number;
+  totalStopTime: number;
+  avgStopDuration: number;
+  plannedStops: number;
+  unplannedStops: number;
+  mttr: number;
+  stopReasons: StopReason[];
+  stopsByMachine: StopsByMachine[];
+  stopHistory: StopHistory[];
+  topStopReasons: Array<{ reason: string; count: number; totalDuration: number }>;
+}
 
 export default function AnaliseParadas() {
+  const { data: stopData, isLoading, error } = useQuery<StopAnalytics>({
+    queryKey: ['stopAnalytics'],
+    queryFn: () => apiClient.getStopAnalysis(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+  });
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Paradas</h1>
+          <p className="text-muted-foreground">Monitoramento de causas e tempos de parada</p>
+        </div>
+        <div className="text-center py-10">Carregando dados...</div>
+      </div>
+    );
+  }
+
+  // Show error state if there was an error fetching data
+  if (error) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Paradas</h1>
+          <p className="text-muted-foreground">Monitoramento de causas e tempos de parada</p>
+        </div>
+        <div className="text-center py-10 text-destructive">
+          Erro ao carregar dados: {error instanceof Error ? error.message : 'An error occurred'}
+        </div>
+      </div>
+    );
+  }
+
+  // If no data is available, show empty state
+  if (!stopData) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Paradas</h1>
+          <p className="text-muted-foreground">Monitoramento de causas e tempos de parada</p>
+        </div>
+        <div className="text-center py-10">Nenhum dado disponível</div>
+      </div>
+    );
+  }
+
+  // Destructure the data from the API response
+  const {
+    totalStops,
+    totalStopTime,
+    avgStopDuration,
+    mttr,
+    stopReasons,
+    stopsByMachine,
+    stopHistory
+  } = stopData;
+
   return (
     <div className="space-y-6">
       <div>
@@ -38,25 +113,25 @@ export default function AnaliseParadas() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total de Paradas"
-          value="46"
+          value={totalStops.toString()}
           icon={AlertTriangle}
           variant="red"
         />
         <MetricCard
           title="Tempo Total Parado"
-          value="515 min"
+          value={`${totalStopTime} min`}
           icon={Clock}
           variant="red"
         />
         <MetricCard
           title="Tempo Médio/Parada"
-          value="11.2 min"
+          value={`${avgStopDuration} min`}
           icon={Clock}
           variant="lightblue"
         />
         <MetricCard
           title="MTTR"
-          value="18 min"
+          value={`${mttr} min`}
           icon={Wrench}
           variant="blue"
         />
@@ -71,7 +146,7 @@ export default function AnaliseParadas() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={motivosParada}
+                  data={stopReasons}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -80,7 +155,7 @@ export default function AnaliseParadas() {
                   fill="#8884d8"
                   dataKey="percentual"
                 >
-                  {motivosParada.map((entry, index) => (
+                  {stopReasons.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -96,7 +171,7 @@ export default function AnaliseParadas() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={paradasPorMaquina}>
+              <BarChart data={stopsByMachine}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="maquina" />
                 <YAxis />
@@ -126,7 +201,7 @@ export default function AnaliseParadas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {motivosParada.map((motivo) => (
+              {stopReasons.map((motivo) => (
                 <TableRow key={motivo.motivo}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
@@ -136,7 +211,7 @@ export default function AnaliseParadas() {
                   </TableCell>
                   <TableCell className="text-right">{motivo.quantidade}</TableCell>
                   <TableCell className="text-right">{motivo.duracao} min</TableCell>
-                  <TableCell className="text-right">{(motivo.duracao / motivo.quantidade).toFixed(1)} min</TableCell>
+                  <TableCell className="text-right">{motivo.quantidade > 0 ? (motivo.duracao / motivo.quantidade).toFixed(1) : '0.0'} min</TableCell>
                   <TableCell className="text-right font-semibold">{motivo.percentual}%</TableCell>
                 </TableRow>
               ))}
@@ -162,7 +237,7 @@ export default function AnaliseParadas() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {historicoParadas.map((parada, idx) => (
+              {stopHistory.map((parada, idx) => (
                 <TableRow key={idx}>
                   <TableCell>{parada.data}</TableCell>
                   <TableCell>{parada.hora}</TableCell>

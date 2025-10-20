@@ -118,6 +118,24 @@ class ApiClient {
     return this.request('/groups');
   }
 
+  // Parameters methods
+  async getSystemParameters() {
+    return this.request('/parameters');
+  }
+
+  async updateSystemParameters(section: string, data: any) {
+    return this.request('/parameters', {
+      method: 'PUT',
+      body: JSON.stringify({ section, data }),
+    });
+  }
+
+  async resetSystemParameters() {
+    return this.request('/parameters/reset', {
+      method: 'POST',
+    });
+  }
+
   // Analytics methods
   async getOeeMetrics() {
     return this.request('/analytics/oee');
@@ -141,6 +159,10 @@ class ApiClient {
 
   async getFlowAnalysis() {
     return this.request('/analytics/flow');
+  }
+
+  async getTacticalDashboard() {
+    return this.request('/analytics/tactical');
   }
 }
 

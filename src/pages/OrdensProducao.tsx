@@ -17,27 +17,71 @@ import { useQuery } from "@tanstack/react-query";
 interface Order {
   id: string;
   orderNumber: string;
-  product: {
-    name: string;
-  };
+  productId: string;
   quantity: number;
   produced: number;
   status: string;
   priority?: number;
   startDate?: string;
   endDate?: string;
+  createdAt: string;
+  updatedAt: string;
   createdById: string;
 }
 
+interface Product {
+  id: string;
+  code: string;
+  name: string;
+  description?: string;
+}
+
+interface OrderWithProduct extends Order {
+  product: Product;
+}
+
 export default function OrdensProducao() {
-  const { data: orders = [], isLoading, refetch } = useQuery({
+  const { data: orders = [], isLoading: ordersLoading, refetch } = useQuery({
     queryKey: ['orders'],
     queryFn: () => apiClient.getOrders(),
   });
 
-  const totalOPs = orders.length;
-  const executing = orders.filter((o: Order) => o.status === "IN_PROGRESS").length;
-  const finished = orders.filter((o: Order) => o.status === "FINISHED").length;
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
+    queryKey: ['products'],
+    queryFn: () => apiClient.getProducts(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Combine orders with product information
+  const ordersWithProducts = orders.map((order: Order) => {
+    const product = products.find(p => p.id === order.productId);
+    return {
+      ...order,
+      product: product || { id: order.productId, code: 'N/A', name: 'Produto não encontrado', description: '' }
+    };
+  });
+
+  const totalOPs = ordersWithProducts.length;
+  const executing = ordersWithProducts.filter((o: OrderWithProduct) => o.status === "IN_PROGRESS").length;
+  const finished = ordersWithProducts.filter((o: OrderWithProduct) => o.status === "FINISHED").length;
+
+  const isLoading = ordersLoading || productsLoading;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Ordens de Produção</h1>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Ordem
+          </Button>
+        </div>
+        <div className="text-center py-10">Carregando dados...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -96,10 +140,10 @@ export default function OrdensProducao() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.map((order) => (
+              {ordersWithProducts.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-semibold text-primary">{order.orderNumber}</TableCell>
-                  <TableCell>{order.product?.name || 'Produto não encontrado'}</TableCell>
+                  <TableCell>{order.product?.name}</TableCell>
                   <TableCell className="font-mono">{order.produced}/{order.quantity}</TableCell>
                   <TableCell>
                     <Badge
@@ -119,8 +163,8 @@ export default function OrdensProducao() {
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Progress value={(order.produced / order.quantity) * 100} className="w-24 h-2" />
-                      <span className="text-sm font-medium">{Math.round((order.produced / order.quantity) * 100)}%</span>
+                      <Progress value={order.quantity > 0 ? (order.produced / order.quantity) * 100 : 0} className="w-24 h-2" />
+                      <span className="text-sm font-medium">{order.quantity > 0 ? Math.round((order.produced / order.quantity) * 100) : 0}%</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">

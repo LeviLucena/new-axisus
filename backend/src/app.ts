@@ -16,6 +16,7 @@ import orderRoutes from './routes/orders';
 import productionRoutes from './routes/production';
 import groupRoutes from './routes/groups';
 import analyticsRoutes from './routes/analytics';
+import parameterRoutes from './routes/parameters';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +37,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/production', productionRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/parameters', parameterRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {

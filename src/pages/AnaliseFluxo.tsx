@@ -2,41 +2,109 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/MetricCard";
 import { GitBranch, TrendingUp, Clock, Package } from "lucide-react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api";
 
-const fluxoProducao = [
-  { etapa: "Recebimento", entrada: 1500, saida: 1480, estoque: 20 },
-  { etapa: "Preparação", entrada: 1480, saida: 1450, estoque: 30 },
-  { etapa: "Usinagem", entrada: 1450, saida: 1420, estoque: 30 },
-  { etapa: "Montagem", entrada: 1420, saida: 1400, estoque: 20 },
-  { etapa: "Inspeção", entrada: 1400, saida: 1380, estoque: 20 },
-  { etapa: "Expedição", entrada: 1380, saida: 1380, estoque: 0 },
-];
+// Define interfaces for flow analysis data
+interface ProductionFlow {
+  etapa: string;
+  entrada: number;
+  saida: number;
+  estoque: number;
+}
 
-const leadTimeData = [
-  { dia: "Seg", leadTime: 145, meta: 120 },
-  { dia: "Ter", leadTime: 132, meta: 120 },
-  { dia: "Qua", leadTime: 128, meta: 120 },
-  { dia: "Qui", leadTime: 138, meta: 120 },
-  { dia: "Sex", leadTime: 125, meta: 120 },
-];
+interface LeadTimeData {
+  dia: string;
+  leadTime: number;
+  meta: number;
+}
 
-const wipData = [
-  { hora: "08h", wip: 250 },
-  { hora: "10h", wip: 280 },
-  { hora: "12h", wip: 310 },
-  { hora: "14h", wip: 290 },
-  { hora: "16h", wip: 270 },
-  { hora: "18h", wip: 240 },
-];
+interface WipData {
+  hora: string;
+  wip: number;
+}
 
-const gargalosData = [
-  { processo: "Usinagem", utilizacao: 95, capacidade: 100 },
-  { processo: "Montagem", utilizacao: 78, capacidade: 100 },
-  { processo: "Inspeção", utilizacao: 85, capacidade: 100 },
-  { processo: "Preparação", utilizacao: 65, capacidade: 100 },
-];
+interface BottleneckAnalysis {
+  processo: string;
+  utilizacao: number;
+  capacidade: number;
+}
+
+interface FlowAnalytics {
+  totalOrders: number;
+  ordersInProgress: number;
+  avgThroughput: number;
+  avgLeadTime: number;
+  currentWip: number;
+  flowEfficiency: number;
+  productionFlow: ProductionFlow[];
+  leadTimeData: LeadTimeData[];
+  wipData: WipData[];
+  bottleneckAnalysis: BottleneckAnalysis[];
+  bottlenecks: Array<{ process: string; avgWaitTime: number; efficiency: number }>;
+}
 
 export default function AnaliseFluxo() {
+  const { data: flowData, isLoading, error } = useQuery<FlowAnalytics>({
+    queryKey: ['flowAnalytics'],
+    queryFn: () => apiClient.getFlowAnalysis(),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+  });
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Fluxo</h1>
+          <p className="text-muted-foreground">Visualização do fluxo produtivo e gargalos</p>
+        </div>
+        <div className="text-center py-10">Carregando dados...</div>
+      </div>
+    );
+  }
+
+  // Show error state if there was an error fetching data
+  if (error) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Fluxo</h1>
+          <p className="text-muted-foreground">Visualização do fluxo produtivo e gargalos</p>
+        </div>
+        <div className="text-center py-10 text-destructive">
+          Erro ao carregar dados: {error instanceof Error ? error.message : 'An error occurred'}
+        </div>
+      </div>
+    );
+  }
+
+  // If no data is available, show empty state
+  if (!flowData) {
+    return (
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Análise de Fluxo</h1>
+          <p className="text-muted-foreground">Visualização do fluxo produtivo e gargalos</p>
+        </div>
+        <div className="text-center py-10">Nenhum dado disponível</div>
+      </div>
+    );
+  }
+
+  // Destructure the data from the API response
+  const {
+    avgLeadTime,
+    currentWip,
+    avgThroughput,
+    flowEfficiency,
+    productionFlow,
+    leadTimeData,
+    wipData,
+    bottleneckAnalysis
+  } = flowData;
+
   return (
     <div className="space-y-6">
       <div>
@@ -47,25 +115,25 @@ export default function AnaliseFluxo() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Lead Time Médio"
-          value="133.6 min"
+          value={`${avgLeadTime} min`}
           icon={Clock}
           variant="blue"
         />
         <MetricCard
           title="WIP Atual"
-          value="240 un"
+          value={`${currentWip} un`}
           icon={Package}
           variant="lightblue"
         />
         <MetricCard
           title="Taxa de Fluxo"
-          value="92%"
+          value={`${flowEfficiency}%`}
           icon={GitBranch}
           variant="green"
         />
         <MetricCard
           title="Throughput"
-          value="1,380 un"
+          value={`${avgThroughput.toLocaleString()} un`}
           icon={TrendingUp}
           variant="green"
         />
@@ -77,7 +145,7 @@ export default function AnaliseFluxo() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={fluxoProducao}>
+            <BarChart data={productionFlow}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="etapa" />
               <YAxis />
@@ -136,7 +204,7 @@ export default function AnaliseFluxo() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={gargalosData} layout="vertical">
+            <BarChart data={bottleneckAnalysis} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" domain={[0, 100]} />
               <YAxis dataKey="processo" type="category" width={100} />
@@ -149,7 +217,7 @@ export default function AnaliseFluxo() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {gargalosData.map((proc) => (
+        {bottleneckAnalysis.map((proc) => (
           <Card key={proc.processo} className={proc.utilizacao >= 90 ? "border-destructive" : ""}>
             <CardHeader>
               <CardTitle className="text-lg">{proc.processo}</CardTitle>
