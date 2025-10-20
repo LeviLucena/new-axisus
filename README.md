@@ -399,26 +399,27 @@ curl -X POST http://localhost:4000/api/parameters/reset \
 
   1. Acessando o token do localStorage (via navegador):
   Se você já estiver logado na aplicação, o token JWT está armazenado no localStorage do navegador:
+```
    - Abra o Console do navegador (F12)
    - Execute: localStorage.getItem('token')
-
+```
   2. Fazendo login via API:
   Você pode obter um novo token fazendo uma requisição POST para o endpoint de login:
-
+```
    1 POST http://localhost:4000/api/auth/login
-
+```
   Com o corpo da requisição no formato JSON:
-
+```
    1 {
    2   "username": "admin",
    3   "password": "admin123",
    4   "profile": "administrador"
    5 }
-
+```
   3. Usando credenciais padrão:
   O projeto vem com credenciais padrão definidas na documentação:
 
-
+```
   ┌───────────────┬────────────┬─────────────┐
   │ Perfil        │ Usuário    │ Senha       │
   ├───────────────┼────────────┼─────────────┤
@@ -426,28 +427,28 @@ curl -X POST http://localhost:4000/api/parameters/reset \
   │ Gestor        │ gestor01   │ gestor123   │
   │ Operador      │ operador01 │ operador123 │
   └───────────────┴────────────┴─────────────┘
-
+```
 
   Exemplo completo de obtenção e uso do token:
 
    1. Primeiro, faça login para obter o token:
-
+```
    1 curl -X POST http://localhost:4000/api/auth/login \
    2   -H "Content-Type: application/json" \
    3   -d '{"username": "admin", "password": "admin123", "profile": "administrador"}'
-
+```
    2. Isso retornará algo como:                                                                                       
-                                                                                                                      
+```
    1 {
    2   "token": "seu_token_jwt_aqui",
    3   "user": { ... }
    4 }
-
+```
    3. Use o token retornado na requisição para o dashboard tático:
-
+```
    1 curl http://localhost:4000/api/analytics/tactical \
    2   -H "Authorization: Bearer seu_token_jwt_aqui"
-
+```
   Ou você pode pegar o token diretamente acessando a aplicação web em http://localhost:8080, fazendo login
   e usando o token que foi automaticamente salvo no localStorage do seu navegador.
 
